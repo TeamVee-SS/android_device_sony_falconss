@@ -198,6 +198,9 @@ PRODUCT_PACKAGES += \
     libqcomfm_jni \
     qcom.fmradio \
 
+PRODUCT_PACKAGES += \
+    libsony
+
 PRODUCT_GMS_CLIENTID_BASE ?= android-sonymobile
 
 # For userdebug builds
