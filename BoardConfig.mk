@@ -168,11 +168,10 @@ BOARD_HAS_NO_MISC_PARTITION := true
 BOARD_HAS_NO_SELECT_BUTTON := true
 TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
 
-# TWRP
-TW_EXTERNAL_STORAGE_PATH := "/external sd"
-TW_EXTERNAL_STORAGE_MOUNT_POINT := "external_sd"
-TW_BRIGHTNESS_PATH := /sys/class/leds/lcd-backlight/brightness
-TW_IGNORE_OVERLAY := true
+# TWRP Support - Optional
+ifeq ($(WITH_TWRP),true)
+-include device/sony/falconss/twrp.mk
+endif
 
 # SEPolicy
 include device/qcom/sepolicy/sepolicy.mk
