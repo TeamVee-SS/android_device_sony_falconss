@@ -150,6 +150,9 @@ BOARD_USES_QC_TIME_SERVICES := true
 # FM radio
 TARGET_QCOM_NO_FM_FIRMWARE := true
 
+# Include an expanded selection of fonts
+EXTENDED_FONT_FOOTPRINT := true
+
 # Init
 TARGET_INIT_VENDOR_LIB := libinit_msm
 TARGET_LIBINIT_DEFINES_FILE := device/sony/falconss/init/init_falconss.c
