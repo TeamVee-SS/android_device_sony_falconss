@@ -76,6 +76,7 @@ $(INSTALLED_RECOVERYIMAGE_TARGET): \
     $(MKBOOTIMG) \
     $(recovery_ramdisk) \
     $(recovery_kernel) \
+    $(call build-recoveryimage-target, $@) \
     $(INSTALLED_DTIMAGE_TARGET)
 
 	@echo -e ${CL_CYN}"----- Making recovery image ------"${CL_RST}
