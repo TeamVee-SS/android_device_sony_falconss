@@ -284,10 +284,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
     wlan.driver.config="/system/etc/wifi/WCNSS_qcom_cfg.ini" \
     wifi.interface="wlan0"
 
-# SDCard
-PRODUCT_PROPERTY_OVERRIDES += \
-    persist.fuse_sdcard="true"
-
 # BlueTooth
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.qualcomm.bt.hci_transport="smd"
