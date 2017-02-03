@@ -21,7 +21,7 @@
 *
 */
 
-//#define LOG_NDEBUG 0
+#define LOG_NDEBUG 0
 #define LOG_TAG "CameraWrapper"
 
 #include <cutils/log.h>
@@ -218,6 +218,9 @@ static char *camera_fixup_getparams(int id, const char *settings)
 
 static char *camera_fixup_setparams(int id, const char *settings)
 {
+    bool videoMode = false;
+    bool hdrMode = false;
+
     android::CameraParameters params;
     params.unflatten(android::String8(settings));
 
@@ -287,6 +290,21 @@ static char *camera_fixup_setparams(int id, const char *settings)
             }
             params.set(KEY_SONY_IMAGE_STABILISER, VALUE_SONY_OFF);
         }
+    }
+
+    if (params.get(android::CameraParameters::KEY_RECORDING_HINT)) {
+        videoMode = !strcmp(params.get(android::CameraParameters::KEY_RECORDING_HINT), "true");
+    }
+
+    if (params.get(android::CameraParameters::KEY_SCENE_MODE)) {
+        hdrMode = (!strcmp(params.get(android::CameraParameters::KEY_SCENE_MODE), "hdr"));
+    }
+
+    /* Enable Morpho EasyHDR */
+    if (hdrMode && !videoMode) {
+        params.set("morpho-hdr", "true");
+    } else {
+        params.set("morpho-hdr", "false");
     }
 
 #if !LOG_NDEBUG
