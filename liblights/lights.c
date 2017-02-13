@@ -18,9 +18,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "lights.sony"
-
-#define BARLED "sys.lights.barled"
+#define LOG_TAG "lights.falconss"
 
 #include <cutils/log.h>
 #include <cutils/properties.h>
@@ -29,7 +27,6 @@
 #include <hardware/lights.h>
 #include <malloc.h>
 #include <pthread.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -57,13 +54,13 @@ char const *const RED_LED_FILE = "/sys/class/leds/red/brightness";
 char const *const GREEN_LED_FILE = "/sys/class/leds/green/brightness";
 char const *const BLUE_LED_FILE = "/sys/class/leds/notification/brightness";
 
-bool property_get_bool(const char *key, bool default_value)
+int lights_property_get_int(const char *key, int default_value)
 {
 	if (!key) {
 		return default_value;
 	}
 
-	bool result = default_value;
+	int result = default_value;
 	char buf[PROP_VALUE_MAX] = {
 	    '\0',
 	};
@@ -72,24 +69,32 @@ bool property_get_bool(const char *key, bool default_value)
 	if (len == 1) {
 		char ch = buf[0];
 		if (ch == '0' || ch == 'n') {
-			result = false;
+			result = 0;
 		} else if (ch == '1' || ch == 'y') {
-			result = true;
+			result = 1;
+		} else if (ch == '2' || ch == 'o') {
+			result = 2;
+		} else {
+			result = 1;
 		}
 	} else if (len > 1) {
 		if (!strcmp(buf, "no") || !strcmp(buf, "false") ||
-		    !strcmp(buf, "off")) {
-			result = false;
+		    !strcmp(buf, "off") || !strcmp(buf, "disable")) {
+			result = 0;
 		} else if (!strcmp(buf, "yes") || !strcmp(buf, "true") ||
-			   !strcmp(buf, "on")) {
-			result = true;
+			   !strcmp(buf, "on") || !strcmp(buf, "enable")) {
+			result = 1;
+		} else if (!strcmp(buf, "only")) {
+			result = 2;
+		} else {
+			result = 1;
 		}
 	}
 
 	return result;
 }
 
-static int write_int(char const *path, int value)
+static int lights_write_int(char const *path, int value)
 {
 	int fd;
 	static int already_warned = 0;
@@ -111,12 +116,12 @@ static int write_int(char const *path, int value)
 }
 
 /* Color tools */
-static int is_lit(struct light_state_t const *state)
+static int lights_is_lit(struct light_state_t const *state)
 {
 	return state->color & 0x00FFFFFF;
 }
 
-static int rgb_to_brightness(struct light_state_t const *state)
+static int lights_rgb_to_brightness(struct light_state_t const *state)
 {
 	int color = state->color & 0x00FFFFFF;
 
@@ -126,79 +131,81 @@ static int rgb_to_brightness(struct light_state_t const *state)
 }
 
 /* The actual lights controlling section */
-static int set_light_backlight(struct light_device_t *dev,
-			       struct light_state_t const *state)
+static int lights_set_backlight(struct light_state_t const *state)
 {
 	int err = 0;
-	int brightness = rgb_to_brightness(state);
+	int brightness = lights_rgb_to_brightness(state);
 	pthread_mutex_lock(&g_lock);
-	err = write_int(LCD_FILE, brightness);
+	err = lights_write_int(LCD_FILE, brightness);
 	pthread_mutex_unlock(&g_lock);
 
 	return err;
 }
 
-static int set_shared_light_locked(struct light_device_t *dev,
-				   struct light_state_t const *state)
+static void lights_set_shared_locked(struct light_state_t const *state)
 {
 	int red, green, blue, rgb;
 
-	red = (state->color >> 16) & 0x00FF;
-	green = (state->color >> 8) & 0x00FF;
-	blue = state->color & 0x00FF;
-
-	write_int(RED_LED_FILE, red);
-	write_int(GREEN_LED_FILE, green);
-	write_int(BLUE_LED_FILE, blue);
-
-	bool barled = property_get_bool(BARLED, true);
-	if (barled) {
+	int barled = lights_property_get_int("sys.lights.barled", 1);
+	if (barled == 1) {
+		red = (state->color >> 16) & 0x00FF;
+		green = (state->color >> 8) & 0x00FF;
+		blue = state->color & 0x00FF;
 		rgb = ((red & 0x00FF) << 16) | ((green & 0x00FF) << 8) |
 		      (blue & 0x00FF);
-		write_int(SNS_LED_FILE, rgb);
+	} elif (barled == 2) {
+		red = 0
+		green = 0
+		blue = 0
+		rgb = ((red & 0x00FF) << 16) | ((green & 0x00FF) << 8) |
+		      (blue & 0x00FF);
 	} else {
-		write_int(SNS_LED_FILE, 0);
+		red = (state->color >> 16) & 0x00FF;
+		green = (state->color >> 8) & 0x00FF;
+		blue = state->color & 0x00FF;
+		rgb = 0;
 	}
 
-	return 0;
+	lights_write_int(RED_LED_FILE, red);
+	lights_write_int(GREEN_LED_FILE, green);
+	lights_write_int(BLUE_LED_FILE, blue);
+	lights_write_int(SNS_LED_FILE, rgb);
 }
 
-static void handle_shared_locked(struct light_device_t *dev)
+static void lights_handle_shared_locked(void)
 {
-	if (is_lit(&g_battery)) {
-		set_shared_light_locked(dev, &g_battery);
+	if (lights_is_lit(&g_battery)) {
+		lights_set_shared_locked(&g_battery);
 	} else {
-		set_shared_light_locked(dev, &g_notification);
+		lights_set_shared_locked(&g_notification);
 	}
 }
 
-static int set_light_battery(struct light_device_t *dev,
-			     struct light_state_t const *state)
+static int lights_set_battery(struct light_state_t const *state)
 {
 	pthread_mutex_lock(&g_lock);
 	g_battery = *state;
-	handle_shared_locked(dev);
+	lights_handle_shared_locked();
 	pthread_mutex_unlock(&g_lock);
 
 	return 0;
 }
 
-static int set_light_notifications(struct light_device_t *dev,
-				   struct light_state_t const *state)
+static int lights_set_notifications(struct light_state_t const *state)
 {
 	pthread_mutex_lock(&g_lock);
 	g_notification = *state;
-	handle_shared_locked(dev);
+	lights_handle_shared_locked();
 	pthread_mutex_unlock(&g_lock);
 
 	return 0;
 }
 
 /* Initializations */
-void init_globals(void) { pthread_mutex_init(&g_lock, NULL); }
+void lights_init_globals(void) { pthread_mutex_init(&g_lock, NULL); }
 
 /* Close the lights device */
-static int close_lights(struct light_device_t *dev)
+static int lights_close(struct light_device_t *dev)
 {
 	if (dev) {
 		free(dev);
@@ -208,23 +215,22 @@ static int close_lights(struct light_device_t *dev)
 }
 
 /* Open a new instance of a lights device using name */
-static int open_lights(const struct hw_module_t *module, char const *name,
+static int lights_open(const struct hw_module_t *module, char const *name,
 		       struct hw_device_t **device)
 {
-	int (*set_light)(struct light_device_t * dev,
-			 struct light_state_t const *state);
+	int (*set_light)(struct light_state_t const *state);
 
 	if (0 == strcmp(LIGHT_ID_BACKLIGHT, name)) {
-		set_light = set_light_backlight;
+		set_light = lights_set_backlight;
 	} else if (0 == strcmp(LIGHT_ID_BATTERY, name)) {
-		set_light = set_light_battery;
+		set_light = lights_set_battery;
 	} else if (0 == strcmp(LIGHT_ID_NOTIFICATIONS, name)) {
-		set_light = set_light_notifications;
+		set_light = lights_set_notifications;
 	} else {
 		return -EINVAL;
 	}
 
-	pthread_once(&g_init, init_globals);
+	pthread_once(&g_init, lights_init_globals);
 
 	struct light_device_t *dev = malloc(sizeof(struct light_device_t));
 	if(!dev)
@@ -235,7 +241,7 @@ static int open_lights(const struct hw_module_t *module, char const *name,
 	dev->common.tag = HARDWARE_DEVICE_TAG;
 	dev->common.version = 0;
 	dev->common.module = (struct hw_module_t *)module;
-	dev->common.close = (int (*)(struct hw_device_t *))close_lights;
+	dev->common.close = (int (*)(struct hw_device_t *))lights_close;
 	dev->set_light = set_light;
 
 	*device = (struct hw_device_t *)dev;
@@ -244,7 +250,7 @@ static int open_lights(const struct hw_module_t *module, char const *name,
 }
 
 static struct hw_module_methods_t lights_module_methods = {
-    .open = open_lights,
+    .open = lights_open,
 };
 
 struct hw_module_t HAL_MODULE_INFO_SYM = {
