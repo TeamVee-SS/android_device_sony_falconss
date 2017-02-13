@@ -41,6 +41,7 @@ static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
 /* Mini-led state machine */
 static struct light_state_t g_notification;
 static struct light_state_t g_battery;
+static int g_attention = 0;
 
 // Backlight
 char const *const LCD_FILE = "/sys/class/leds/lcd-backlight/brightness";
@@ -53,6 +54,7 @@ char const *const SNS_LED_FILE =
 char const *const RED_LED_FILE = "/sys/class/leds/red/brightness";
 char const *const GREEN_LED_FILE = "/sys/class/leds/green/brightness";
 char const *const BLUE_LED_FILE = "/sys/class/leds/notification/brightness";
+char const *const RED_BLINK_FILE = "/sys/class/leds/red/blink";
 
 int lights_property_get_int(const char *key, int default_value)
 {
@@ -145,8 +147,21 @@ static int lights_set_backlight(struct light_state_t const *state)
 static void lights_set_shared_locked(struct light_state_t const *state)
 {
 	int red, green, blue, rgb;
-
+	int blink, onMS, offMS;
 	int barled = lights_property_get_int("sys.lights.barled", 1);
+
+	switch (state->flashMode) {
+	case LIGHT_FLASH_TIMED:
+		onMS = state->flashOnMS;
+		offMS = state->flashOffMS;
+		break;
+	case LIGHT_FLASH_NONE:
+	default:
+		onMS = 0;
+		offMS = 0;
+		break;
+	}
+
 	if (barled == 1) {
 		red = (state->color >> 16) & 0x00FF;
 		green = (state->color >> 8) & 0x00FF;
@@ -166,10 +181,21 @@ static void lights_set_shared_locked(struct light_state_t const *state)
 		rgb = 0;
 	}
 
-	lights_write_int(RED_LED_FILE, red);
-	lights_write_int(GREEN_LED_FILE, green);
-	lights_write_int(BLUE_LED_FILE, blue);
-	lights_write_int(SNS_LED_FILE, rgb);
+	if (onMS > 0 && offMS > 0) {
+		blink = 1;
+	} else {
+		blink = 0;
+	}
+
+	if (blink) {
+		if (red)
+			lights_write_int(RED_BLINK_FILE, blink);
+	} else {
+		lights_write_int(RED_LED_FILE, red);
+		lights_write_int(GREEN_LED_FILE, green);
+		lights_write_int(BLUE_LED_FILE, blue);
+		lights_write_int(SNS_LED_FILE, rgb);
+	}
 }
 
 static void lights_handle_shared_locked(void)
@@ -201,6 +227,20 @@ static int lights_set_notifications(struct light_state_t const *state)
 	return 0;
 }
 
+static int lights_set_attention(struct light_state_t const* state)
+{
+	pthread_mutex_lock(&g_lock);
+	if (state->flashMode == LIGHT_FLASH_HARDWARE) {
+		g_attention = state->flashOnMS;
+	} else if (state->flashMode == LIGHT_FLASH_NONE) {
+		g_attention = 0;
+	}
+	lights_handle_shared_locked();
+	pthread_mutex_unlock(&g_lock);
+
+	return 0;
+}
+
 /* Initializations */
 void lights_init_globals(void) { pthread_mutex_init(&g_lock, NULL); }
 
@@ -226,6 +266,8 @@ static int lights_open(const struct hw_module_t *module, char const *name,
 		set_light = lights_set_battery;
 	} else if (0 == strcmp(LIGHT_ID_NOTIFICATIONS, name)) {
 		set_light = lights_set_notifications;
+	} else if (0 == strcmp(LIGHT_ID_ATTENTION, name)) {
+		set_light = lights_set_attention;
 	} else {
 		return -EINVAL;
 	}
