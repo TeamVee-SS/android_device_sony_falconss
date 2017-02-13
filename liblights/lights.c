@@ -168,10 +168,10 @@ static void lights_set_shared_locked(struct light_state_t const *state)
 		blue = state->color & 0x00FF;
 		rgb = ((red & 0x00FF) << 16) | ((green & 0x00FF) << 8) |
 		      (blue & 0x00FF);
-	} elif (barled == 2) {
-		red = 0
-		green = 0
-		blue = 0
+	} else if (barled == 2) {
+		red = 0;
+		green = 0;
+		blue = 0;
 		rgb = ((red & 0x00FF) << 16) | ((green & 0x00FF) << 8) |
 		      (blue & 0x00FF);
 	} else {
