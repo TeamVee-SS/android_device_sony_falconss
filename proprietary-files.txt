@@ -14,7 +14,6 @@ bin/mpdecision
 bin/netmgrd
 bin/ptt_socket_app
 bin/qmuxd
-bin/qseecomd
 bin/radish
 bin/rfs_access
 bin/rild
@@ -389,7 +388,6 @@ vendor/lib/libqmiservices.so
 vendor/lib/libqmi.so
 vendor/lib/libqomx_jpegdec.so
 vendor/lib/libqomx_jpegenc.so
-vendor/lib/libQSEEComAPI.so
 vendor/lib/libquipc_os_api.so
 vendor/lib/libquipc_ulp_adapter.so
 vendor/lib/libril-qc-qmi-1.so

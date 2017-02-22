@@ -555,11 +555,6 @@ service thermal-engine /system/bin/thermal-engine
     user root
     group root
 
-service qseecomd /system/bin/qseecomd
-    class late_start
-    user root
-    group root
-
 service qrngd /system/bin/qrngd -f
     class main
     user root
