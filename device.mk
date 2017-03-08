@@ -318,3 +318,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.sys.strictmode.disable="1" \
     persist.sys.strictmode.visual="0"
+
+# Low Memory Props
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.sys.fw.bg_apps_limit="16" \
+    ro.config.max_starting_bg="2"
