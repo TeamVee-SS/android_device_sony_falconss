@@ -333,3 +333,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
     config.disable_atlas="true" \
     ro.config.max_starting_bg="4" \
     persist.sys.force_highendgfx="true"
+
+# Disable Strict Mode enabled on eng/userdebug builds
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.sys.strictmode.disable="1" \
+    persist.sys.strictmode.visual="0"
