@@ -313,3 +313,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # Liblight
 PRODUCT_PROPERTY_OVERRIDES += \
     sys.lights.barled="true"
+
+# Disable Strict Mode enabled on eng/userdebug builds
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.sys.strictmode.disable="1" \
+    persist.sys.strictmode.visual="0"
