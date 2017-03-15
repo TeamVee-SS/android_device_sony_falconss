@@ -1,0 +1,26 @@
+From a6d59e69df561e169f64397fe4217b2fa0cb208e Mon Sep 17 00:00:00 2001
+From: Caio Oliveira <caiooliveirafarias0@gmail.com>
+Date: Wed, 15 Mar 2017 11:56:38 -0300
+Subject: [PATCH] build: core: qcom_utils: Add msm8610 to QCOM_BOARD_PLATFORMS
+
+Change-Id: Ie4d7085baf32aa90a104d246dd3160b609d3f057
+Signed-off-by: Caio Oliveira <caiooliveirafarias0@gmail.com>
+---
+ core/qcom_utils.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/core/qcom_utils.mk b/core/qcom_utils.mk
+index eac5b7c2..ebab2d06 100755
+--- a/core/qcom_utils.mk
++++ b/core/qcom_utils.mk
+@@ -5,6 +5,7 @@ QCOM_BOARD_PLATFORMS += msm7x27a
+ QCOM_BOARD_PLATFORMS += msm7x30
+ QCOM_BOARD_PLATFORMS += qsd8k
+ QCOM_BOARD_PLATFORMS += msm8226
++QCOM_BOARD_PLATFORMS += msm8610
+ QCOM_BOARD_PLATFORMS += msm8660
+ QCOM_BOARD_PLATFORMS += msm8960
+ QCOM_BOARD_PLATFORMS += msm8974
+-- 
+2.11.0
+
