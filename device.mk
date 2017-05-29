@@ -310,10 +310,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
     persist.dash.max.rep.bandwidth="4000000" \
     persist.dash.avsync.window.msec="100"
 
-# Liblight
-PRODUCT_PROPERTY_OVERRIDES += \
-    sys.lights.barled="true"
-
 # Disable Strict Mode enabled on eng/userdebug builds
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.sys.strictmode.disable="1" \
